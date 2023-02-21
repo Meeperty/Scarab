@@ -170,7 +170,9 @@ namespace Scarab.Services
                 ? _fs.FileStream.Create(ConfigPath, FileMode.Truncate)
                 : _fs.File.Create(ConfigPath);
 
-            await JsonSerializer.SerializeAsync(fs, this);
+            var opts = new JsonSerializerOptions();
+            opts.WriteIndented = true;
+            await JsonSerializer.SerializeAsync(fs, this, opts);
         }
     }
 }
