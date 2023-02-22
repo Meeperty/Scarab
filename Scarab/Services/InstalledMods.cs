@@ -16,9 +16,13 @@ namespace Scarab.Services
     [Serializable]
     public record InstalledMods : IModSource
     {
-        internal string ConfigPath => Path.Combine(Settings.GetOrCreateDirPath(), InstallPath.Replace("\\", "-").Replace("/", "-").Replace("C:-", "") + "--InstalledMods.json");
+        internal string ConfigPath => Path.Combine(Settings.GetOrCreateDirPath(),
+            InstallPath.Replace("\\", "-").Replace("/", "-").Replace("C:-", "") + "--InstalledMods.json");
 
-        private string InstallPath { get; set; }
+        private static string OldConfigPath => Path.Join(Settings.GetOrCreateDirPath(), "InstalledMods.json");
+
+
+		private string InstallPath { get; set; }
 
         public Dictionary<string, InstalledState> Mods { get; init; } = new();
 
@@ -34,9 +38,9 @@ namespace Scarab.Services
 
         private readonly IFileSystem _fs;
 
-        public static InstalledMods Load(IFileSystem fs, ISettings config, ModLinks ml, string path)
+        public static InstalledMods Load(IFileSystem fs, ISettings config, ModLinks ml, string installPath)
         {
-            InstalledMods db = new(path);
+            InstalledMods db = new(installPath);
 
             bool ModExists(string name, out bool enabled)
             {
@@ -50,9 +54,16 @@ namespace Scarab.Services
 
             try
             {
-                db = JsonSerializer.Deserialize<InstalledMods>(File.ReadAllText(db.ConfigPath))
-                    ?? throw new InvalidDataException();
-            } catch (Exception e) when (e is InvalidDataException or JsonException or FileNotFoundException)
+                if (File.Exists(OldConfigPath))
+                {
+					db = JsonSerializer.Deserialize<InstalledMods>(File.ReadAllText(OldConfigPath))
+						?? new InstalledMods(installPath);
+                    //delete old config so this case doesn't happen again
+                    File.Delete(OldConfigPath);
+				}
+				db = JsonSerializer.Deserialize<InstalledMods>(File.ReadAllText(db.ConfigPath))
+						?? throw new InvalidDataException();
+			} catch (Exception e) when (e is InvalidDataException or JsonException or FileNotFoundException)
             {
                 // If we have malformed JSON or it's a new install, try and recover any installed mods
                 db = new InstalledMods();
