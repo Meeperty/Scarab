@@ -168,7 +168,7 @@ namespace Scarab.ViewModels
             
             var outOfDate = _items.Where(x => x.State is InstalledState { Updated: false }).ToList();
 
-            foreach (ModItem mod in outOfDate)
+            foreach (ModItem mod in outOfDate.ToList())
             {
                 // Mods can get updated as dependencies of others while doing this
                 if (mod.State is not InstalledState { Updated: false })
