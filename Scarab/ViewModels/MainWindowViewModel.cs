@@ -124,10 +124,11 @@ namespace Scarab.ViewModels
               .AddSingleton(hc)
               .AddSingleton<ISettings>(_ => settings)
               .AddSingleton<IFileSystem, FileSystem>()
-              .AddSingleton<IModSource>(services => InstalledMods.Load(
+              .AddSingleton<IModSource>(services => new InstalledMods(
                   services.GetRequiredService<IFileSystem>(),
                   settings,
-                  content.ml
+                  content.ml,
+                  settings.ManagedFolder
               ))
               .AddSingleton<IModDatabase, ModDatabase>(sp => new ModDatabase(sp.GetRequiredService<IModSource>(), content))
               .AddSingleton<IInstaller, Installer>()

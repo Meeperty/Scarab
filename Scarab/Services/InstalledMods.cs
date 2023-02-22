@@ -16,9 +16,9 @@ namespace Scarab.Services
     [Serializable]
     public record InstalledMods : IModSource
     {
-        private const string FILE_NAME = "InstalledMods.json";
-        
-        internal static readonly string ConfigPath = Path.Combine(Settings.GetOrCreateDirPath(), FILE_NAME);
+        internal string ConfigPath => Path.Combine(Settings.GetOrCreateDirPath(), InstallPath.Replace("\\", "-").Replace("/", "-").Replace("C:-", "") + "--InstalledMods.json");
+
+        private string InstallPath { get; set; }
 
         public Dictionary<string, InstalledState> Mods { get; init; } = new();
 
@@ -34,9 +34,9 @@ namespace Scarab.Services
 
         private readonly IFileSystem _fs;
 
-        public static InstalledMods Load(IFileSystem fs, ISettings config, ModLinks ml)
+        public static InstalledMods Load(IFileSystem fs, ISettings config, ModLinks ml, string path)
         {
-            InstalledMods db;
+            InstalledMods db = new(path);
 
             bool ModExists(string name, out bool enabled)
             {
@@ -50,7 +50,7 @@ namespace Scarab.Services
 
             try
             {
-                db = JsonSerializer.Deserialize<InstalledMods>(File.ReadAllText(ConfigPath))
+                db = JsonSerializer.Deserialize<InstalledMods>(File.ReadAllText(db.ConfigPath))
                     ?? throw new InvalidDataException();
             } catch (Exception e) when (e is InvalidDataException or JsonException or FileNotFoundException)
             {
@@ -101,6 +101,20 @@ namespace Scarab.Services
         }
 
         public InstalledMods() => _fs = new FileSystem();
+
+        public InstalledMods(IFileSystem fs, ISettings config, ModLinks ml, string path)
+        {
+            InstalledMods im = Load(fs, config, ml, path);
+            im.InstallPath = path;
+
+            //copy
+			Mods = im.Mods;
+            ApiInstall = im.ApiInstall;
+            InstallPath = im.InstallPath;
+            _fs = fs;
+		}
+
+        private InstalledMods(string path) => InstallPath = path;
 
         public InstalledMods(IFileSystem fs) => _fs = fs;
 
