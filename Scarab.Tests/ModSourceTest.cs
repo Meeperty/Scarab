@@ -16,11 +16,11 @@ namespace Scarab.Tests
         {
             var fs = new MockFileSystem();
             
-            fs.AddDirectory(Path.GetDirectoryName(InstalledMods.ConfigPath));
-            
-            IModSource ms = new InstalledMods(fs);
+            InstalledMods ms = new InstalledMods(fs);
 
-            var orig_version = new Version("1.3.2.2");
+			fs.AddDirectory(Path.GetDirectoryName(ms.ConfigPath));
+
+			var orig_version = new Version("1.3.2.2");
 
             var state = new InstalledState(true, orig_version, true);
             
@@ -40,7 +40,7 @@ namespace Scarab.Tests
             
             await ms.RecordInstalledState(item);
             
-            Assert.True(fs.FileExists(InstalledMods.ConfigPath));
+            Assert.True(fs.FileExists(ms.ConfigPath));
 
             var manifest = new Manifest {
                 Name = "test"
